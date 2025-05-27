@@ -1,0 +1,51 @@
+.container {
+  padding: 20px;
+}
+
+.buttonGroup {
+  margin-bottom: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.importButton {
+  padding: 10px 16px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.resetButton {
+  padding: 10px 16px;
+  background-color: #ffc107;
+  color: #333;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.queryBox {
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.queryUrl {
+  font-family: monospace;
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: #007bff;
+}
+
+.queryJson {
+  margin: 0;
+  font-size: 13px;
+  background: #fff;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow-x: auto;
+}
