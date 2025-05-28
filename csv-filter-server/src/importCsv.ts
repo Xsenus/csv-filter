@@ -13,14 +13,14 @@ export async function importCsvFromFolder(folderPath: string): Promise<void> {
 
   const insert = db.prepare(`
     INSERT INTO products
-    (category, invertor, firm, series, type, power, powerName, powerValue, powerOut, model, expenses, cost, profit, status, note)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (category, invertor, firm, series, type, power, powerName, powerValue, powerOut, model, expenses, cost, profit, status, note, blockPlacement)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const selectDuplicate = db.prepare(`
     SELECT 1 FROM products WHERE
       category = ? AND invertor = ? AND firm = ? AND series = ? AND type = ? AND power = ? AND powerName = ? AND
-      powerValue = ? AND powerOut = ? AND model = ? AND expenses = ? AND cost = ? AND profit = ? AND status = ? AND note = ?
+      powerValue = ? AND powerOut = ? AND model = ? AND expenses = ? AND cost = ? AND profit = ? AND status = ? AND note = ? AND blockPlacement = ?
   `);
 
   const transaction = db.transaction((items: Product[]) => {
@@ -41,6 +41,7 @@ export async function importCsvFromFolder(folderPath: string): Promise<void> {
         item.profit,
         item.status,
         item.note,
+        item.blockPlacement,
       ]);
 
       if (!exists) {
@@ -60,6 +61,7 @@ export async function importCsvFromFolder(folderPath: string): Promise<void> {
           item.profit,
           item.status,
           item.note,
+          item.blockPlacement,
         ]);
         unique++;
       }
@@ -110,6 +112,7 @@ function readCsv(filePath: string): Promise<Product[]> {
           profit: parseFloat(data.Profit) || 0,
           status: sanitize(data.Status || ''),
           note: sanitize(data.Note || ''),
+          blockPlacement: parseBlockPlacement(sanitize(data.Note || '')),
         };
 
         const allEmpty = [
@@ -133,6 +136,13 @@ function readCsv(filePath: string): Promise<Product[]> {
       .on('end', () => resolve(rows))
       .on('error', reject);
   });
+}
+
+function parseBlockPlacement(note: string): 'inside' | 'outside' | '' {
+  const text = note.toLowerCase();
+  if (text.includes('inside_block')) return 'inside';
+  if (text.includes('outside_block')) return 'outside';
+  return '';
 }
 
 function parsePowerName(power: string): string {

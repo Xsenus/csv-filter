@@ -14,4 +14,5 @@ export interface Product {
   profit: number;
   status: string;
   note: string;
+  blockPlacement: string;
 }

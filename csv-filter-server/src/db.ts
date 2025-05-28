@@ -22,7 +22,8 @@ db.prepare(
     cost REAL,
     profit REAL,
     status TEXT,
-    note TEXT
+    note TEXT,
+    blockPlacement TEXT
   )
 `,
 ).run();
