@@ -211,7 +211,23 @@ app.get('/filters', (req: Request, res: Response) => {
       const additionalRows = db.prepare(additionalQuery).all(...seriesSet) as ProductWithId[];
 
       const seen = new Set(rows.map((r) => r.id));
-      const uniqueAdditions = additionalRows.filter((r) => !seen.has(r.id));
+
+      const allowedPowerOut = filters.powerOut?.length
+        ? new Set(filters.powerOut.map(Number))
+        : new Set(rows.map((r) => r.powerOut));
+
+      const allowedPower = filters.power?.length ? new Set(filters.power) : null;
+
+      const uniqueAdditions = additionalRows.filter((r) => {
+        if (seen.has(r.id)) return false;
+
+        if (r.blockPlacement === 'outside') {
+          if (!allowedPowerOut.has(r.powerOut)) return false;
+          if (allowedPower && !allowedPower.has(r.power)) return false;
+        }
+
+        return true;
+      });
 
       fullRows = [...rows, ...uniqueAdditions];
     }

@@ -115,21 +115,13 @@ function readCsv(filePath: string): Promise<Product[]> {
           blockPlacement: parseBlockPlacement(sanitize(data.Note || '')),
         };
 
-        const allEmpty = [
-          product.series,
-          product.type,
-          product.power,
-          product.model,
-          product.expenses,
-          product.cost,
-          product.profit,
-          product.status,
-          product.note,
-        ].every((v) => v === '' || v === 0);
+        const allEmpty = [product.power, product.powerName, product.model, product.status].every(
+          (v) => v === '',
+        );
 
-        const isGarbageFirm = product.firm === '' || /^-+$/.test(product.firm);
-
-        if (allEmpty && isGarbageFirm) return;
+        if (allEmpty) return;
+        // const isGarbageFirm = product.firm === '' || /^-+$/.test(product.firm);
+        // if (allEmpty && isGarbageFirm) return;
 
         rows.push(product);
       })
