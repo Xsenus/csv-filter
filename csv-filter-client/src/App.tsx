@@ -69,6 +69,16 @@ function App() {
 
   const filterQuery = buildQuery(filters, usePowerValueAnd);
 
+  const sortFilters = (entries: [string, string[]][]): [string, string[]][] => {
+    const priority = ['category', 'power', 'powerValue', 'powerOut', 'firm', 'model'];
+    return entries.sort(([a], [b]) => {
+      const aIndex = priority.findIndex((key) => a.toLowerCase().startsWith(key));
+      const bIndex = priority.findIndex((key) => b.toLowerCase().startsWith(key));
+      const getIndex = (i: number) => (i === -1 ? 999 : i);
+      return getIndex(aIndex) - getIndex(bIndex);
+    });
+  };
+
   return (
     <div style={{ padding: 20 }}>
       {importMessage && (
@@ -106,7 +116,7 @@ function App() {
         <pre style={{ marginTop: 4, fontSize: 13 }}>{JSON.stringify(filters, null, 2)}</pre>
       </div>
 
-      {Object.entries(options).map(([field, values]) => (
+      {sortFilters(Object.entries(options)).map(([field, values]) => (
         <DynamicFilterPanel
           key={field}
           field={field}
