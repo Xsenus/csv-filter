@@ -5,6 +5,7 @@ export interface Product {
   series: string;
   type: string;
   power: string;
+  powerName: string;
   powerValue: number;
   powerOut: number;
   model: string;

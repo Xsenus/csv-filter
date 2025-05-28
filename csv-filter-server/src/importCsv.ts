@@ -13,13 +13,13 @@ export async function importCsvFromFolder(folderPath: string): Promise<void> {
 
   const insert = db.prepare(`
     INSERT INTO products
-    (category, invertor, firm, series, type, power, powerValue, powerOut, model, expenses, cost, profit, status, note)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (category, invertor, firm, series, type, power, powerName, powerValue, powerOut, model, expenses, cost, profit, status, note)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const selectDuplicate = db.prepare(`
     SELECT 1 FROM products WHERE
-      category = ? AND invertor = ? AND firm = ? AND series = ? AND type = ? AND power = ? AND
+      category = ? AND invertor = ? AND firm = ? AND series = ? AND type = ? AND power = ? AND powerName = ? AND
       powerValue = ? AND powerOut = ? AND model = ? AND expenses = ? AND cost = ? AND profit = ? AND status = ? AND note = ?
   `);
 
@@ -32,6 +32,7 @@ export async function importCsvFromFolder(folderPath: string): Promise<void> {
         item.series,
         item.type,
         item.power,
+        item.powerName,
         item.powerValue,
         item.powerOut,
         item.model,
@@ -50,6 +51,7 @@ export async function importCsvFromFolder(folderPath: string): Promise<void> {
           item.series,
           item.type,
           item.power,
+          item.powerName,
           item.powerValue,
           item.powerOut,
           item.model,
@@ -99,6 +101,7 @@ function readCsv(filePath: string): Promise<Product[]> {
           series: sanitize(data.series || ''),
           type,
           power: rawPower,
+          powerName: parsePowerName(rawPower),
           powerValue: PowerValue,
           powerOut: PowerOut,
           model: sanitize(data.model || ''),
@@ -130,6 +133,12 @@ function readCsv(filePath: string): Promise<Product[]> {
       .on('end', () => resolve(rows))
       .on('error', reject);
   });
+}
+
+function parsePowerName(power: string): string {
+  if (!power) return '';
+  const index = power.indexOf('_');
+  return index >= 0 ? power.slice(0, index) : power;
 }
 
 function getType(series: string): string {

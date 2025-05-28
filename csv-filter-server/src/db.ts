@@ -14,6 +14,7 @@ db.prepare(
     series TEXT,
     type TEXT,
     power TEXT,
+    powerName TEXT,
     powerValue INTEGER,
     powerOut INTEGER,
     model TEXT,
