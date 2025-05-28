@@ -3,11 +3,15 @@ import cors from 'cors';
 import path from 'path';
 import { importCsvFromFolder } from './importCsv';
 import db from './db';
-import { Product } from './types';
-import { logDebug } from './logger'; // предполагается, что logDebug лежит в logger.ts
+import { logDebug } from './logger';
+import { ProductWithId } from './types';
 
 const app = express();
 const PORT = 3000;
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Сервер запущен на http://localhost:${PORT}`);
+});
 
 app.use(cors());
 app.use(express.json());
@@ -31,7 +35,6 @@ app.get('/options', (req: Request, res: Response) => {
     logDebug('OPTIONS / powerValue', andPowerValues);
     logDebug('OPTIONS / isUseAnd', isUseAnd);
 
-    // Применяем AND-фильтрацию по powerValue (как и в /filters)
     if (isUseAnd && andPowerValues.length > 1) {
       const placeholders = andPowerValues.map(() => '?').join(', ');
       const count = andPowerValues.length;
@@ -91,7 +94,6 @@ app.get('/options', (req: Request, res: Response) => {
           continue;
         }
 
-        // Ограничим firm списком допустимых для всех остальных колонок
         const firmQuery = `
           SELECT firm FROM products
           WHERE powerValue IN (${placeholders})
@@ -109,6 +111,18 @@ app.get('/options', (req: Request, res: Response) => {
       const query = `SELECT DISTINCT ${col} FROM products ${whereClause.clause} ORDER BY ${col}`;
       const values = db.prepare(query).all(...whereClause.params);
       result[col] = values.map((r: any) => String(r[col]));
+
+      if (filters.category?.includes('MULT') && col === 'series') {
+        const mainSeries = result[col];
+        const placeholders = mainSeries.map(() => '?').join(', ');
+        const query = `SELECT DISTINCT ${col} FROM products WHERE ${col} IN (${placeholders}) AND category = 'MULT'`;
+        const additional = db
+          .prepare(query)
+          .all(...mainSeries)
+          .map((r: any) => String(r[col]));
+
+        result[col] = Array.from(new Set([...mainSeries, ...additional]));
+      }
     }
 
     res.json(result);
@@ -181,17 +195,32 @@ app.get('/filters', (req: Request, res: Response) => {
     logDebug('Regular SELECT query', query);
     logDebug('Regular params', regularParams);
 
-    const rows = db.prepare(query).all(...regularParams);
-    res.json(rows);
+    const rows = db.prepare(query).all(...regularParams) as ProductWithId[];
+
+    let fullRows = rows;
+
+    if (filters.category?.includes('MULT')) {
+      const seriesSet = new Set(rows.map((r) => r.series));
+      const placeholders = [...seriesSet].map(() => '?').join(', ');
+      const additionalQuery = `
+        SELECT * FROM products
+        WHERE series IN (${placeholders})
+          AND category = 'MULT'
+      `;
+
+      const additionalRows = db.prepare(additionalQuery).all(...seriesSet) as ProductWithId[];
+
+      const seen = new Set(rows.map((r) => r.id));
+      const uniqueAdditions = additionalRows.filter((r) => !seen.has(r.id));
+
+      fullRows = [...rows, ...uniqueAdditions];
+    }
+
+    res.json(fullRows);
   } catch (error) {
     console.error('❌ Ошибка /filters:', error);
     res.status(500).json({ error: 'Ошибка при фильтрации' });
   }
-});
-
-// 🚀 Старт сервера
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Сервер запущен на http://localhost:${PORT}`);
 });
 
 // ========================

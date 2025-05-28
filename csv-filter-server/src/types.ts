@@ -16,3 +16,5 @@ export interface Product {
   note: string;
   blockPlacement: string;
 }
+
+export type ProductWithId = Product & { id: number };
