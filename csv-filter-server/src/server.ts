@@ -5,9 +5,11 @@ import { importCsvFromFolder } from './importCsv';
 import db from './db';
 import { logDebug } from './logger';
 import { ProductWithId } from './types';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Сервер запущен на http://localhost:${PORT}`);
