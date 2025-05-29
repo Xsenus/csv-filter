@@ -11,9 +11,10 @@ function App() {
   const [options, setOptions] = useState<Record<string, string[]>>({});
   const [products, setProducts] = useState<Product[]>([]);
   const [usePowerValueAnd, setUsePowerValueAnd] = useState(false);
+  const [useOnlyInside, setUseOnlyInside] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
 
-  const buildQuery = (data: FilterMap, useAndFlag: boolean): string => {
+  const buildQuery = (data: FilterMap, useAndFlag: boolean, onlyInsideFlag = false): string => {
     const query = new URLSearchParams();
     for (const key in data) {
       if (data[key].length) {
@@ -23,18 +24,21 @@ function App() {
     if (useAndFlag) {
       query.set('isUseAnd', '1');
     }
+    if (onlyInsideFlag) {
+      query.set('onlyInside', '1');
+    }
     return query.toString();
   };
 
   const fetchOptions = useCallback(() => {
-    const query = buildQuery(filters, usePowerValueAnd);
+    const query = buildQuery(filters, usePowerValueAnd, useOnlyInside);
     api.get(`/options?${query}`).then((res) => setOptions(res.data));
-  }, [filters, usePowerValueAnd]);
+  }, [filters, usePowerValueAnd, useOnlyInside]);
 
   const fetchProducts = useCallback(() => {
-    const query = buildQuery(filters, usePowerValueAnd);
+    const query = buildQuery(filters, usePowerValueAnd, useOnlyInside);
     api.get(`/filters?${query}`).then((res) => setProducts(res.data));
-  }, [filters, usePowerValueAnd]);
+  }, [filters, usePowerValueAnd, useOnlyInside]);
 
   const handleToggle = (field: string, value: string) => {
     setFilters((prev) => {
@@ -67,7 +71,7 @@ function App() {
     fetchProducts();
   }, [fetchOptions, fetchProducts]);
 
-  const filterQuery = buildQuery(filters, usePowerValueAnd);
+  const filterQuery = buildQuery(filters, usePowerValueAnd, useOnlyInside);
 
   const sortFilters = (entries: [string, string[]][]): [string, string[]][] => {
     const priority = ['category', 'power', 'powerValue', 'powerOut', 'firm', 'model'];
@@ -127,19 +131,33 @@ function App() {
           requestUrl={`/options?${buildQuery(
             { ...filters, [field]: filters[field] || [] },
             usePowerValueAnd,
+            useOnlyInside,
           )}`}
           extraLabelElement={
-            field === 'powerValue' && (
-              <label style={{ fontSize: 13 }}>
-                <input
-                  type="checkbox"
-                  checked={usePowerValueAnd}
-                  onChange={(e) => setUsePowerValueAnd(e.target.checked)}
-                  style={{ marginRight: 4 }}
-                />
-                USE AND
-              </label>
-            )
+            <>
+              {field === 'powerValue' && (
+                <label style={{ fontSize: 13, marginRight: 10 }}>
+                  <input
+                    type="checkbox"
+                    checked={usePowerValueAnd}
+                    onChange={(e) => setUsePowerValueAnd(e.target.checked)}
+                    style={{ marginRight: 4 }}
+                  />
+                  USE AND
+                </label>
+              )}
+              {field === 'powerOut' && (
+                <label style={{ fontSize: 13, marginRight: 10 }}>
+                  <input
+                    type="checkbox"
+                    checked={useOnlyInside}
+                    onChange={(e) => setUseOnlyInside(e.target.checked)}
+                    style={{ marginRight: 4 }}
+                  />
+                  ONLY INSIDE
+                </label>
+              )}
+            </>
           }
         />
       ))}

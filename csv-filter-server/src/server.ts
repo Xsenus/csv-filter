@@ -211,7 +211,6 @@ app.get('/filters', (req: Request, res: Response) => {
       `;
 
       const additionalRows = db.prepare(additionalQuery).all(...seriesSet) as ProductWithId[];
-
       const seen = new Set(rows.map((r) => r.id));
 
       const allowedPowerOut = filters.powerOut?.length
@@ -223,6 +222,8 @@ app.get('/filters', (req: Request, res: Response) => {
       const uniqueAdditions = additionalRows.filter((r) => {
         if (seen.has(r.id)) return false;
 
+        if (filters.onlyInside && r.blockPlacement === 'outside') return false;
+
         if (r.blockPlacement === 'outside') {
           if (!allowedPowerOut.has(r.powerOut)) return false;
           if (allowedPower && !allowedPower.has(r.power)) return false;
@@ -231,7 +232,9 @@ app.get('/filters', (req: Request, res: Response) => {
         return true;
       });
 
-      fullRows = [...rows, ...uniqueAdditions];
+      let baseRows = filters.onlyInside ? rows.filter((r) => r.blockPlacement !== 'outside') : rows;
+
+      fullRows = [...baseRows, ...uniqueAdditions];
     }
 
     res.json(fullRows);
@@ -244,10 +247,14 @@ app.get('/filters', (req: Request, res: Response) => {
 // ========================
 // 🔧 ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ========================
-function parseFilters(query: any): Record<string, any[]> {
-  const result: Record<string, any[]> = {};
+function parseFilters(query: any): Record<string, any[]> & { onlyInside?: boolean } {
+  const result: Record<string, any[]> & { onlyInside?: boolean } = {};
   for (const key in query) {
     if (key === 'isUseAnd') continue;
+    if (key === 'onlyInside') {
+      result.onlyInside = ['true', '1', 1, true].includes(query[key]);
+      continue;
+    }
     if (typeof query[key] === 'string') {
       const values = query[key].split(',').map((v) => v.trim());
       result[key] = key === 'powerValue' ? values.map(Number) : values;
